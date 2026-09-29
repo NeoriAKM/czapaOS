@@ -1,6 +1,5 @@
 %include "src/const.asm"
 
-
 process_cmd:
     mov di, [buf_len]
     mov bx, buffer
@@ -34,6 +33,11 @@ process_cmd:
     mov di, cmd_logo
     call streq
     jc .logo
+    ; prpt
+    mov si, buffer
+    mov di, cmd_prpt
+    call streq
+    jc .prpt
     ; undefined
     mov si, msg_unknown
     call puts
@@ -64,18 +68,37 @@ process_cmd:
     mov si, msg_ascii
     call puts
     ret
+.prpt:
+    mov si, msg_prpt1
+    call puts
 
+    mov di, buffer
+    mov cx, 63
+    call gets ; bx = answ
+
+    mov si, buffer
+    mov di, shell_pt
+    call set_prompt
+
+    mov si, msg_prpt2
+    call puts
+    ret
 
 msg_help:
-    db '=== Commands: ===', 13, 10
+    db '===== Commands: =====', 13, 10
     db 'help   : show list of commands', 13, 10
     db 'abt    : About system', 13, 10
     db 'clear  : just clearing screen bro', 13, 10
     db 'reboot : rebooting ur PC', 13, 10
-    db 'logo   : print to screen big ASCII OS logo', 13, 10, 10, 0
+    db 'logo   : print to screen big ASCII OS logo', 13, 10
+    db 'prpt   : changes your shell-prompt', 13, 10
+    db '=====================', 13, 10, 10, 0
 
 msg_about:
-    db 'You are using czapaOS v', VERSION, 13, 10
+    db 'You are using:  CzapaOS v', VERSION, 13, 10
     db '-------------------------', 13, 10
     db SECTORS, ' sectors using', 13, 10
     db '16 bit (REAL MODE)', 13, 10, 0
+
+msg_prpt1 db 'Your new prompt: ', 0
+msg_prpt2 db 'Success!', 13, 10, 0

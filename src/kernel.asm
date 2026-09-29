@@ -14,50 +14,17 @@ start:
     mov si, msg_ascii
     call puts
 
-    call prompt_out
-
 hang:
-    ;sti
-    ;hlt
-
-    ; AL - ASCII  AH - scan-code
-    mov ah, 0x00
-    int 0x16
-
-    cmp al, 13 ; Enter
-    je newline
-    cmp al, 8  ; Backspace
-    je backspace
-    cmp al, 32
-    jb hang
-    call add_char_to_buffer
-    jmp hang
-
-newline:
-    mov al, 13
-    call putc
-    mov al, 10
-    call putc
-    
-    call process_cmd
-
-    mov word [buf_len], 0
-    mov word [buffer], 0
-
     call prompt_out
-    jmp hang
+    mov di, buffer
+    mov cx, 63
+    call gets
 
-backspace:
-    cmp word [buf_len], 0
+    cmp bx, 0
     je hang
 
-    dec word [buf_len]
-    mov al, 8
-    call putc
-    mov al, ' '
-    call putc
-    mov al, 8
-    call putc
+    call process_cmd
+
     jmp hang
 
 ; ====================== SHELL ====================== ;
@@ -84,20 +51,6 @@ streq:
     ret
 .eq:
     stc
-    ret
-
-; --- Defs ---
-
-add_char_to_buffer:
-    mov di, [buf_len]
-    cmp di, 63 ; size = 64 Bytes
-    jae .done
-    mov bx, buffer
-    mov [bx + di], al
-    inc word [buf_len]
-    call putc
-    ret
-.done:
     ret
 
 
@@ -128,6 +81,7 @@ cmd_about  db 'abt'   , 0
 cmd_clear  db 'clear' , 0
 cmd_reboot db 'reboot', 0
 cmd_logo   db 'logo'  , 0
+cmd_prpt   db 'prpt'  , 0
 
 msg_unknown db 'Unknown command', 13, 10, 0
 
@@ -136,6 +90,6 @@ buffer  times 64 db 0
 buf_len dw 0
 
 shell_pt times 64 db 0
-default_shell_pt db 'ChapaOS-user: '
+default_shell_pt db 'CzapaOS-user: '
 
 times 5120-($-$$) db 0
