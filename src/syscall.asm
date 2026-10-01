@@ -95,3 +95,32 @@ gets:
     mov al, 8
     call putc
     jmp .loop
+
+
+putdec: ; ax = value, thats you need to pring
+    push ax
+    push bx
+    push cx
+    push dx
+
+    xor cx, cx
+    mov bx, 10
+.divide:
+    xor dx, dx
+    div bx
+    push dx
+    inc cx
+    test ax, ax
+    jnz .divide
+
+.print:
+    pop ax
+    add al, '0'
+    call putc
+    loop .print
+
+    pop dx
+    pop cx
+    pop bx
+    pop ax
+    ret

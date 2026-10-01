@@ -1,5 +1,12 @@
 %include "src/const.asm"
 
+%macro CMD 3
+    mov si, buffer
+    mov di, %1
+    call streq
+    jc %2
+%endmacro
+
 process_cmd:
     mov di, [buf_len]
     mov bx, buffer
@@ -8,36 +15,19 @@ process_cmd:
     cmp byte [buffer], 0
     je .empty_return
 
-    ; help
     mov si, buffer
-    mov di, cmd_help
-    call streq
-    jc .help
-    ; about
-    mov si, buffer
-    mov di, cmd_about
-    call streq
-    jc .about
-    ; clear
-    mov si, buffer
-    mov di, cmd_clear
-    call streq
-    jc .clear
-    ; reboot
-    mov si, buffer
-    mov di, cmd_reboot
-    call streq
-    jc .reboot
-    ; logo
-    mov si, buffer
-    mov di, cmd_logo
-    call streq
-    jc .logo
-    ; prpt
-    mov si, buffer
-    mov di, cmd_prpt
-    call streq
-    jc .prpt
+    call split_args
+    mov [arg_ptr], si
+
+    CMD cmd_help,  .help,   0
+    CMD cmd_about, .about,  0
+    CMD cmd_clear, .clear,  0
+    CMD cmd_reboot,.reboot, 0
+    CMD cmd_logo,  .logo,   0
+    CMD cmd_prpt,  .prpt,   0
+    CMD cmd_mem,   .mem,    0
+    CMD cmd_ver,   .ver,    0
+    CMD cmd_echo,  .echo,   0
     ; undefined
     mov si, msg_unknown
     call puts
@@ -84,6 +74,31 @@ process_cmd:
     call puts
     ret
 
+.echo:
+    mov si, [arg_ptr]
+    test si, si
+    jz .empty
+    call puts
+.empty:
+    mov si, msg_rn0 ; \r \n and \0
+    call puts
+    ret
+
+.mem:
+    xor ax, ax
+    int 0x12
+    call putdec
+    mov si, msg_mem
+    call puts
+    ret
+
+.ver:
+    mov si, msg_ver
+    call puts
+    ret
+
+arg_ptr dw 0
+
 msg_help:
     db '===== Commands: =====', 13, 10
     db 'help   : show list of commands', 13, 10
@@ -92,6 +107,9 @@ msg_help:
     db 'reboot : rebooting ur PC', 13, 10
     db 'logo   : print to screen big ASCII OS logo', 13, 10
     db 'prpt   : changes your shell-prompt', 13, 10
+    db 'mem    : shows your memory size', 13, 10
+    db 'ver    : CzapaOS version', 13, 10
+    db 'echo   : Prints all, thats you type after command', 13, 10
     db '=====================', 13, 10, 10, 0
 
 msg_about:
@@ -102,3 +120,9 @@ msg_about:
 
 msg_prpt1 db 'Your new prompt: ', 0
 msg_prpt2 db 'Success!', 13, 10, 0
+
+msg_mem db ' KB', 13, 10, 0
+
+msg_ver db 'CzapaOS v', VERSION, ' | release day: ', LAST_UPDATE_DATA, 13, 10, 0
+
+msg_rn0 db 13, 10, 0
